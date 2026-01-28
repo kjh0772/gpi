@@ -3,9 +3,10 @@
 # 대상: Raspberry Pi OS (Bookworm/Bullseye), 사용자 pi 기준
 # 리포: https://github.com/kjh0772/gpi.git
 #
-# 사용:
-#   cd ~
-#   bash ./pi-setup.txt
+# 사용(복붙):
+# - 이 파일(`pi-setup.txt`) 내용을 라즈베리파이 터미널에 그대로 복붙해서 실행하세요.
+# - (선택) 리포가 이미 푸시된 상태라면 raw 파일로도 실행 가능:
+#     curl -fsSL https://raw.githubusercontent.com/kjh0772/gpi/main/pi-setup.txt | bash
 #
 # 주의:
 # - 센서 사용을 위해 I2C/UART/GPIO 권한이 필요합니다.
