@@ -3,6 +3,10 @@
 # 대상: Raspberry Pi OS (Bookworm/Bullseye), 사용자 pi 기준
 # 리포: https://github.com/kjh0772/gpi.git
 #
+# 사용:
+#   cd ~
+#   bash ./pi-setup.txt
+#
 # 주의:
 # - 센서 사용을 위해 I2C/UART/GPIO 권한이 필요합니다.
 # - serialport/better-sqlite3/node-dht-sensor 등은 Pi에서 네이티브 빌드가 필요할 수 있어 빌드 도구를 설치합니다.
@@ -55,8 +59,10 @@ npm install
 echo "[6/7] 실행 (권장: PM2)"
 # PM2는 devDependency에 포함되어 있어 npm install 후 사용 가능
 npm run pm2:start
-pm2 save
-pm2 startup || true
+# 변경: 로컬 설치 PM2를 확실히 쓰기 위해 npx 사용
+npx pm2 save
+# 변경: 부팅 자동 시작(선택) - systemd 등록 (비대화형)
+sudo env "PATH=$PATH" npx pm2 startup systemd -u pi --hp /home/pi || true
 
 echo "[선택] systemd로 OTA 구성(원하면 아래 블록만 추가로 실행)"
 cat <<'EOF'
@@ -84,8 +90,8 @@ cat <<'EOF'
 EOF
 
 echo "[7/7] 동작 확인"
-pm2 ls
-pm2 logs --lines 100
+npx pm2 ls
+npx pm2 logs --lines 100
 
 echo ""
 echo "완료. UART 설정 적용을 위해 재부팅이 필요할 수 있습니다:"
