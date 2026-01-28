@@ -234,6 +234,11 @@ class WebServer {
         </div>
 
         <div class="card">
+          <h2>OTA / 업데이트 정보</h2>
+          <div class="kv" id="otaInfo"></div>
+        </div>
+
+        <div class="card">
           <h2>원본 JSON</h2>
           <pre id="raw">{}</pre>
         </div>
@@ -385,8 +390,24 @@ class WebServer {
 
           if (!d) {
             $('summary').innerHTML = kv('상태', '데이터 없음');
+            $('otaInfo').innerHTML = kv('상태', 'OTA 정보 없음');
             return;
           }
+
+          // 변경: OTA/업데이트 정보 카드 채우기
+          const ota = d.ota || {};
+          const otaVersion = ota.version || d.gpi_sv || 'N/A';
+          const otaCommit = ota.commit || '-';
+          const otaMessage = ota.message || '-';
+          const otaCommittedAt = fmtSeoulTime(ota.committedAt);
+          const otaAppliedAt = fmtSeoulTime(ota.appStartedAt || d.timestamp);
+          $('otaInfo').innerHTML = [
+            kv('버전', w('vy', otaVersion)),
+            kv('커밋', w('vn', otaCommit)),
+            kv('메시지', w('vl', otaMessage)),
+            kv('커밋시각', w('vp', otaCommittedAt)),
+            kv('적용시각', w('vp', otaAppliedAt)),
+          ].join('');
 
           // 변경: ADS1115(A0~A3) 라인 + 가독성용 색상
           const adsLine =

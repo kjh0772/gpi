@@ -36,6 +36,10 @@ class GPIMonitor {
     this.consoleInterval = 2000; // 콘솔 출력 주기 (10초)
     this.lastConsoleTime = 0; // 마지막 콘솔 출력 시간
 
+    // 변경: OTA/버전 정보 상태 (웹 대시보드 표시용)
+    this.otaInfo = null;
+    this.appStartedAt = null;
+
     // 변경: 일 적산온도(GDD) 누적용 상태 (MQTT 포맷은 수정하지 않음)
     this.gddBaseTemp = 10.0; // 변경: 기준온도(작물별 조정 가능)
     this.gddDayKey = null; // YYYY-MM-DD
@@ -337,6 +341,31 @@ class GPIMonitor {
   async initialize() {
     console.log('=== GPI 모니터링 시스템 초기화 ===\n');
 
+    // 변경: OTA/버전 정보(마지막 커밋 정보) 캐시
+    try {
+      const out = execSync('git log -1 --pretty=format:"%h%n%s%n%ci"', {
+        encoding: 'utf8',
+      }).split('\n');
+      const [sha, subject, date] = out;
+      this.appStartedAt = this.getSeoulTimeISOString();
+      this.otaInfo = {
+        version: version.gpi_sv,
+        commit: sha || null,
+        message: subject || null,
+        committedAt: date || null,
+        appStartedAt: this.appStartedAt,
+      };
+    } catch (e) {
+      this.appStartedAt = this.getSeoulTimeISOString();
+      this.otaInfo = {
+        version: version.gpi_sv,
+        commit: null,
+        message: null,
+        committedAt: null,
+        appStartedAt: this.appStartedAt,
+      };
+    }
+
     // 데이터베이스 초기화
     this.db = new ConfigDB();
     
@@ -427,7 +456,9 @@ class GPIMonitor {
       ipAddress: this.getLocalIP(),
       // 변경: 버전 정보 추가
       gpi_hv: version.gpi_hv,
-      gpi_sv: version.gpi_sv
+      gpi_sv: version.gpi_sv,
+      // 변경: OTA/업데이트 정보 추가
+      ota: this.otaInfo,
     };
 
     // 변경: CPU 온도 추가
