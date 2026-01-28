@@ -1,0 +1,25 @@
+# 변경: 라즈베리파이/운영 환경에서 생성되는 파일은 git 추적 제외
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# DB / 런타임 생성물
+config.db
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# OS/editor
+.DS_Store
+Thumbs.db
+
+# env (프로젝트 규칙상 환경파일은 커밋/변경 금지 권장)
+.env
+.env.*
+!.env.example
+

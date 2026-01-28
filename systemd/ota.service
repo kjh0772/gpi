@@ -1,0 +1,22 @@
+# gpi2 메인 앱 실행 (OTA-GUIDE)
+# 설치: sudo cp systemd/ota.service /etc/systemd/system/
+#       sudo systemctl daemon-reload && sudo systemctl enable --now ota
+# 경로/유저는 실제 환경에 맞게 수정
+
+[Unit]
+Description=GPI2 application (OTA)
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/gpi2
+Environment=OTA_GH_OWNER=kjh0772
+Environment=OTA_GH_REPO=gpi
+Environment=OTA_GH_BRANCH=main
+ExecStart=/usr/bin/node gpi.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,25 @@
+# OTA 리포 업데이터 (OTA-GUIDE)
+# 브랜치 HEAD 폴링 → 변경 시 git pull → ota 서비스 재시작
+# 설치: sudo cp systemd/ota-updater.service /etc/systemd/system/
+#       visudo에 pi NOPASSWD: /bin/systemctl restart ota 추가
+#       sudo systemctl daemon-reload && sudo systemctl enable --now ota-updater
+
+[Unit]
+Description=OTA repo updater (pull + restart on change)
+After=network.target ota.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/gpi2
+Environment=OTA_GH_OWNER=kjh0772
+Environment=OTA_GH_REPO=gpi
+Environment=OTA_GH_BRANCH=main
+Environment=OTA_REPO_POLL_MS=5000
+Environment=OTA_REPO_POST_UPDATE_CMD=sudo systemctl restart ota
+ExecStart=/usr/bin/node repo-updater.js
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
