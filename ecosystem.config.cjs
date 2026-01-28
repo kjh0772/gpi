@@ -26,7 +26,8 @@ module.exports = {
         OTA_GH_OWNER: 'kjh0772',
         OTA_GH_REPO: 'gpi',
         OTA_GH_BRANCH: 'main',
-        OTA_REPO_POLL_MS: 5000,
+        // OTA_GH_TOKEN: Pi에서 환경 변수로 설정 (export OTA_GH_TOKEN=ghp_xxx)
+        OTA_REPO_POLL_MS: 10000, // 변경: 폴링 10초
         OTA_REPO_POST_UPDATE_CMD: 'pm2 restart gpi',
       },
       restart_delay: 10000,
