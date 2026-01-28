@@ -25,6 +25,11 @@ sudo apt install -y nodejs
 node -v
 npm -v
 
+echo "[2.1/7] PM2 전역 설치(선행)"
+# 변경: PM2 명령을 안정적으로 쓰기 위해 전역 설치
+sudo npm install -g pm2
+pm2 -v
+
 echo "[3/7] I2C / UART 활성화(가능한 경우 자동) + 권한 그룹 추가"
 # raspi-config nonint가 있으면 자동 설정, 없으면 수동 설정 안내만 출력
 if command -v raspi-config >/dev/null 2>&1; then
@@ -35,14 +40,28 @@ if command -v raspi-config >/dev/null 2>&1; then
   sudo raspi-config nonint do_serial_hw 0 || true
 fi
 
-# MH-Z19C용 UART 설정(config.txt 경로는 OS 버전에 따라 다름)
+# 4) 시리얼(UART) 활성화 & 블루투스 비활성화 설정 (MH-Z19C용)
+# config.txt 경로는 OS 버전에 따라 다름
 CFG="/boot/config.txt"
 if [ -f "/boot/firmware/config.txt" ]; then
   CFG="/boot/firmware/config.txt"
 fi
 echo "UART config: $CFG"
-sudo grep -q '^enable_uart=1$' "$CFG" || echo 'enable_uart=1' | sudo tee -a "$CFG" >/dev/null
-sudo grep -q '^dtoverlay=disable-bt$' "$CFG" || echo 'dtoverlay=disable-bt' | sudo tee -a "$CFG" >/dev/null
+
+# config.txt 백업
+sudo cp "$CFG" "${CFG}.bak.$(date +%Y%m%d-%H%M%S)"
+
+# enable_uart=1 설정 (있으면 수정, 없으면 추가)
+if grep -Eq '^\s*enable_uart=' "$CFG"; then
+  sudo sed -i -E 's/^\s*enable_uart=.*/enable_uart=1/' "$CFG"
+else
+  echo 'enable_uart=1' | sudo tee -a "$CFG" >/dev/null
+fi
+
+# dtoverlay=disable-bt 추가(중복 방지)
+if ! grep -Eq '^\s*dtoverlay=disable-bt\s*$' "$CFG"; then
+  echo 'dtoverlay=disable-bt' | sudo tee -a "$CFG" >/dev/null
+fi
 
 # 권한: I2C / UART(dialout) / GPIO 접근
 sudo usermod -aG i2c,dialout,gpio pi || true
@@ -58,43 +77,23 @@ echo "[5/7] 의존성 설치"
 npm install
 
 echo "[6/7] 실행 (권장: PM2)"
-# PM2는 devDependency에 포함되어 있어 npm install 후 사용 가능
+# 변경: PM2는 전역 설치되어 있어 pm2 명령 사용 가능
 npm run pm2:start
-# 변경: 로컬 설치 PM2를 확실히 쓰기 위해 npx 사용
-npx pm2 save
-# 변경: 부팅 자동 시작(선택) - systemd 등록 (비대화형)
-sudo env "PATH=$PATH" npx pm2 startup systemd -u pi --hp /home/pi || true
-
-echo "[선택] systemd로 OTA 구성(원하면 아래 블록만 추가로 실행)"
-cat <<'EOF'
-## systemd 방식(선택)
-## - 서비스 파일을 복사하고, WorkingDirectory를 /home/pi/gpi 로 맞춘 뒤 enable 합니다.
-##
-## sudo cp systemd/ota.service /etc/systemd/system/
-## sudo cp systemd/ota-updater.service /etc/systemd/system/
-##
-## sudo sed -i 's|WorkingDirectory=/home/pi/gpi2|WorkingDirectory=/home/pi/gpi|g' /etc/systemd/system/ota.service
-## sudo sed -i 's|WorkingDirectory=/home/pi/gpi2|WorkingDirectory=/home/pi/gpi|g' /etc/systemd/system/ota-updater.service
-##
-## # updater가 재시작을 수행할 수 있도록 sudoers.d에 권한 부여(권장)
-## echo 'pi ALL=(ALL) NOPASSWD: /bin/systemctl restart ota' | sudo tee /etc/sudoers.d/ota-updater
-## sudo chmod 440 /etc/sudoers.d/ota-updater
-## sudo visudo -cf /etc/sudoers
-##
-## sudo systemctl daemon-reload
-## sudo systemctl enable --now ota
-## sudo systemctl enable --now ota-updater
-##
-## 확인:
-## systemctl status ota --no-pager
-## systemctl status ota-updater --no-pager
-EOF
+# 변경: 부팅 자동 시작(선택) - PM2 startup 등록
+pm2 save
+# 변경: 부팅 자동 시작(선택) - PM2 startup 등록 (systemd 폴더는 미사용)
+sudo env "PATH=$PATH" pm2 startup systemd -u pi --hp /home/pi || true
 
 echo "[7/7] 동작 확인"
-npx pm2 ls
-npx pm2 logs --lines 100
+pm2 ls
+pm2 logs --lines 100
 
 echo ""
 echo "완료. UART 설정 적용을 위해 재부팅이 필요할 수 있습니다:"
 echo "  sudo reboot"
+echo ""
+echo "=== OTA GitHub API용 토큰 (한 번만, 이미 했다면 생략) ==="
+echo "부팅 시에도 토큰 적용되도록 프로젝트 안 .env.ota 사용 (ghp_xxx 부분을 실제 토큰으로 교체):"
+echo "  echo 'OTA_GH_TOKEN=ghp_여기에_새토큰' > ~/gpi/.env.ota"
+echo "  pm2 restart ota-updater"
 

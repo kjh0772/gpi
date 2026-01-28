@@ -22,4 +22,6 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+# 변경: Pi 전용 OTA 토큰 (repo-updater가 읽음, 커밋 금지)
+.env.ota
 
