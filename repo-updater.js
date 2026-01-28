@@ -133,15 +133,17 @@ async function pollLoop() {
       if (POST_UPDATE_CMD) {
         const cmd = resolvePostUpdateCmd();
         console.log('[repo-updater] 실행: ' + cmd);
-        // 변경: PM2 프로세스는 PATH가 제한돼 있어 pm2를 못 찾을 수 있음 → PATH 보강 및 절대경로 사용
+        // 변경: cwd를 프로젝트 루트로 고정, PATH 보강
         const pathEnv = process.env.PATH || '';
         const nodeDir = path.dirname(process.execPath);
         const safePath = nodeDir + ':/usr/local/bin:/usr/bin:/bin' + (pathEnv ? ':' + pathEnv : '');
         execSync(cmd, {
           stdio: 'inherit',
           shell: true,
+          cwd: __dirname,
           env: { ...process.env, PATH: safePath },
         });
+        console.log('[repo-updater] 재시작 명령 완료');
       }
       if (EXIT_ON_UPDATE) {
         process.exit(42);
